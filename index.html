@@ -1430,7 +1430,7 @@ function pomoReset(){
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, GoogleAuthProvider, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -1451,12 +1451,19 @@ let currentUser = null;
 let saveTimeout = null;
 
 window.handleSignIn = function(){
-  document.getElementById('signinError').textContent = 'redirecting to Google...';
-  signInWithRedirect(auth, provider);
+  document.getElementById('signinError').textContent = '';
+  signInWithPopup(auth, provider).catch(err=>{
+    // fallback to redirect if popup gets blocked
+    if(err.code === 'auth/popup-blocked' || err.code === 'auth/cancelled-popup-request'){
+      signInWithRedirect(auth, provider);
+    } else {
+      document.getElementById('signinError').textContent = 'sign-in failed — ' + err.code;
+    }
+  });
 };
 window.handleSignOut = function(){ signOut(auth); };
 
-// catch the result after Google redirects back
+// catch the result if the app used the redirect fallback
 getRedirectResult(auth).catch(err=>{
   if(err) document.getElementById('signinError').textContent = 'sign-in failed — ' + err.code;
 });
